@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">awareness</string>
+    <string name="title_activity_nearyby_beacons">NearybyBeacons</string>
+    <string name="title_activity_headphone_state">HeadphoneStateActivity</string>
+    <string name="title_activity_location">LocationActivity</string>
+    <string name="title_activity_place">PlaceActivity</string>
+</resources>
