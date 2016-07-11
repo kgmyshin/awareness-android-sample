@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.awareness.Awareness;
 import com.google.android.gms.awareness.snapshot.HeadphoneStateResult;
@@ -17,6 +19,7 @@ import com.kgmyshin.awareness.R;
 public class HeadphoneStateActivity extends AppCompatActivity {
 
     private static final String TAG = "HeadphoneStateActivity";
+    private GoogleApiClient apiClient;
 
     public static Intent createIntent(Context context) {
         return new Intent(context, HeadphoneStateActivity.class);
@@ -27,25 +30,50 @@ public class HeadphoneStateActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_snapshot_headphone_state);
 
-        GoogleApiClient apiClient = new GoogleApiClient.Builder(this).addApi(Awareness.API).build();
-        apiClient.connect();
-        Awareness.SnapshotApi.getHeadphoneState(apiClient)
-                .setResultCallback(new ResultCallback<HeadphoneStateResult>() {
-                    @Override
-                    public void onResult(@NonNull HeadphoneStateResult headphoneStateResult) {
-                        if (!headphoneStateResult.getStatus().isSuccess()) {
-                            Log.e(TAG, "Could not get headphone state.");
-                            return;
-                        }
-                        HeadphoneState headphoneState = headphoneStateResult.getHeadphoneState();
-                        if (headphoneState.getState() == HeadphoneState.PLUGGED_IN) {
-                            Log.i(TAG, "Headphones are plugged in.\n");
-                        } else {
-                            Log.i(TAG, "Headphones are NOT plugged in.\n");
-                        }
-                    }
-                });
+        apiClient = new GoogleApiClient.Builder(this).addApi(Awareness.API).build();
 
+        findViewById(R.id.fire_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Awareness.SnapshotApi.getHeadphoneState(apiClient)
+                        .setResultCallback(new ResultCallback<HeadphoneStateResult>() {
+                            @Override
+                            public void onResult(@NonNull HeadphoneStateResult headphoneStateResult) {
+                                if (!headphoneStateResult.getStatus().isSuccess()) {
+                                    Log.e(TAG, "Could not get headphone state.");
+                                    return;
+                                }
+                                HeadphoneState headphoneState = headphoneStateResult.getHeadphoneState();
+                                showState(headphoneState);
+                            }
+                        });
+            }
+        });
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        apiClient.connect();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        apiClient.disconnect();
+    }
+
+    private void showState(HeadphoneState state) {
+        Toast.makeText(this, getStateName(state), Toast.LENGTH_SHORT).show();
+    }
+
+    private String getStateName(HeadphoneState state) {
+        if (state.getState() == HeadphoneState.PLUGGED_IN) {
+            return "ささってる";
+        } else {
+            return "ささってない";
+        }
     }
 
 }

@@ -11,6 +11,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.awareness.Awareness;
 import com.google.android.gms.awareness.snapshot.LocationResult;
@@ -21,6 +23,7 @@ import com.kgmyshin.awareness.R;
 public class LocationActivity extends AppCompatActivity {
 
     private static final String TAG = "LocationActivity";
+    private GoogleApiClient apiClient;
 
     public static Intent createIntent(Context context) {
         return new Intent(context, LocationActivity.class);
@@ -43,20 +46,41 @@ public class LocationActivity extends AppCompatActivity {
             return;
         }
 
-        GoogleApiClient apiClient = new GoogleApiClient.Builder(this).addApi(Awareness.API).build();
+        apiClient = new GoogleApiClient.Builder(this).addApi(Awareness.API).build();
+
+        findViewById(R.id.fire_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Awareness.SnapshotApi.getLocation(apiClient)
+                        .setResultCallback(new ResultCallback<LocationResult>() {
+                            @Override
+                            public void onResult(@NonNull LocationResult locationResult) {
+                                if (!locationResult.getStatus().isSuccess()) {
+                                    Log.e(TAG, "Could not get location.");
+                                    return;
+                                }
+                                Location location = locationResult.getLocation();
+                                showLocation(location);
+                            }
+                        });
+            }
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
         apiClient.connect();
-        Awareness.SnapshotApi.getLocation(apiClient)
-                .setResultCallback(new ResultCallback<LocationResult>() {
-                    @Override
-                    public void onResult(@NonNull LocationResult locationResult) {
-                        if (!locationResult.getStatus().isSuccess()) {
-                            Log.e(TAG, "Could not get location.");
-                            return;
-                        }
-                        Location location = locationResult.getLocation();
-                        Log.i(TAG, "Lat: " + location.getLatitude() + ", Lon: " + location.getLongitude());
-                    }
-                });
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        apiClient.disconnect();
+    }
+
+    private void showLocation(Location location) {
+        Toast.makeText(this, "Lat: " + location.getLatitude() + ", Lon: " + location.getLongitude(), Toast.LENGTH_SHORT).show();
     }
 
 }
